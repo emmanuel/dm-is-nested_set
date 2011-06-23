@@ -21,8 +21,9 @@ module DataMapper
         # be cut down to 1 instead of 2 queries. this would be the other way, but seems hackish:
         # options[:child_key].each{|pname| property(pname, Integer) unless properties.detect{|p| p.name == pname}}
 
-        belongs_to :parent,   :model => self, :child_key => options[:child_key], :order => [ :lft ], :required => false
-        has n,     :children, :model => self, :child_key => options[:child_key], :order => [ :lft ]
+        belongs_to :parent,   self, :child_key => options[:child_key], :order => [ :lft ], :required => false
+        has n,     :children, self, :child_key => options[:child_key], :order => [ :lft ]
+        has n,     :siblings, self, :child_key => options[:child_key], :order => [ :lft ], :through => :parent, :via => :children
 
         before :create do
           if !parent
@@ -348,11 +349,11 @@ module DataMapper
         #
         # @return <Collection>
         # @see #self_and_siblings
-        def siblings
-          # TODO find a way to return this as a collection?
-          # TODO supply filtering-option?
-          self_and_siblings.reject { |r| r.key == key } # because identitymap is not used in console
-        end
+        # def siblings
+        #   # TODO find a way to return this as a collection?
+        #   # TODO supply filtering-option?
+        #   self_and_siblings.reject { |r| r.key == key } # because identitymap is not used in console
+        # end
 
         ##
         # get sibling to the left of/above this node in the nested tree
@@ -360,7 +361,7 @@ module DataMapper
         # @return <Resource, NilClass> the resource to the left, or nil if self is leftmost
         # @see #self_and_siblings
         def left_sibling
-          self_and_siblings.detect { |v| v.rgt == lft - 1 }
+          siblings(:rgt => lft - 1)
         end
 
         ##
@@ -369,7 +370,7 @@ module DataMapper
         # @return <Resource, NilClass> the resource to the right, or nil if self is rightmost
         # @see #self_and_siblings
         def right_sibling
-          self_and_siblings.detect { |v| v.lft == rgt + 1 }
+          siblings(:lft => rgt + 1)
         end
 
       private
