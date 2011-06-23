@@ -173,7 +173,7 @@ module DataMapper
         # @see move
         def move_without_saving(vector)
           if vector.kind_of?(Hash)
-            action, object = vector.keys[0], vector.values[0]
+            action, resource = vector.keys[0], vector.values[0]
           else
             action = vector
           end
@@ -187,10 +187,10 @@ module DataMapper
             when :lowest  then ancestor      ? ancestor.rgt          : nil  # : "is root, or has no parent"
             when :indent  then left_sibling  ? left_sibling.rgt      : nil  # : "cannot find a sibling to indent into"
             when :outdent then ancestor      ? ancestor.rgt + 1      : nil  # : "is root, or has no parent"
-            when :into    then object        ? object.rgt            : nil  # : "supply an object"
-            when :above   then object        ? object.lft            : nil  # : "supply an object"
-            when :below   then object        ? object.rgt + 1        : nil  # : "supply an object"
-            when :to      then object        ? object.to_i           : nil  # : "supply a number"
+            when :into    then resource      ? resource.rgt          : nil  # : "supply a resource"
+            when :above   then resource      ? resource.lft          : nil  # : "supply a resource"
+            when :below   then resource      ? resource.rgt + 1      : nil  # : "supply a resource"
+            when :to      then resource      ? resource.to_i         : nil  # : "supply a number"
           end
 
           ##
@@ -201,7 +201,7 @@ module DataMapper
           # raise UnableToPositionError unless position.is_a?(Integer) && position > 0
           return false if !position || position < 1
           # return false if you are trying to move this into another scope
-          return false if [ :into, :above, :below ].include?(action) && nested_set_scope != object.nested_set_scope
+          return false if [ :into, :above, :below ].include?(action) && nested_set_scope != resource.nested_set_scope
           # if node is already in the requested position
           if lft == position || rgt == position - 1
             self.parent = ancestor # must set this again, because it might have been changed by the user before move.
@@ -209,11 +209,13 @@ module DataMapper
           end
 
           ##
-          # if this node is already positioned we need to move it, and close the gap it leaves behind etc
-          # otherwise we only need to open a gap in the set, and smash that buggar in
+          # if this node is already positioned we need to move it
+          # and close the gap it leaves behind etc
+          # otherwise we only need to open a gap in the set, and insert the node
           #
           if lft && rgt
-            # raise exception if node is trying to move into one of its descendants (infinite loop, spacetime will warp)
+            # raise exception if node is trying to move into one of its descendants
+            # (infinite loop, spacetime will warp)
             raise RecursiveNestingError if position > lft && position < rgt
             # find out how wide this node is, as we need to make a gap large enough for it to fit in
             gap = rgt - lft + 1
@@ -253,7 +255,7 @@ module DataMapper
         #
         # @return <Integer>
         def level
-          # TODO make a level-property that is cached and intelligently adjusted when saving objects
+          # TODO make a level-property that is cached and intelligently adjusted when saving resources
           ancestors.length
         end
 
@@ -278,7 +280,7 @@ module DataMapper
         ##
         # get the parent of this node. Same as #parent, but finds it from lft/rgt instead of parent-key
         #
-        # @return <Resource, NilClass> returns the parent-object, or nil if this is root/detached
+        # @return <Resource, NilClass> returns the parent resource, or nil if this is root/detached
         def ancestor
           ancestors.last
         end
