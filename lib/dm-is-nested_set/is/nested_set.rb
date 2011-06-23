@@ -48,18 +48,19 @@ module DataMapper
         before :destroy do
           detach
         end
-
-        after_class_method :inherited do |retval, target|
-          target.instance_variable_set(:@nested_set_scope,  @nested_set_scope.dup)
-          target.instance_variable_set(:@nested_set_parent, @nested_set_parent.dup)
-        end
-
       end
 
       module ClassMethods
         attr_reader :nested_set_scope, :nested_set_parent
 
-        def adjust_gap!(scoped_set,at,adjustment)
+        def inherited(model)
+          super
+
+          model.instance_variable_set(:@nested_set_scope,  @nested_set_scope.dup)
+          model.instance_variable_set(:@nested_set_parent, @nested_set_parent.dup)
+        end
+
+        def adjust_gap!(scoped_set, at, adjustment)
           scoped_set.all(:rgt.gt => at).adjust!({ :rgt => adjustment }, true)
           scoped_set.all(:lft.gt => at).adjust!({ :lft => adjustment }, true)
         end
